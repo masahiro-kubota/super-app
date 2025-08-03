@@ -4,16 +4,187 @@
 
 ```mermaid
 graph TB
-    Slack[Slack Workspace] --> SlackApp[Slack App/Bot]
-    SlackApp --> EventHandler[Event Handler]
-    EventHandler --> NLPProcessor[NLP Processor]
-    NLPProcessor --> ChatGPT[ChatGPT API]
-    NLPProcessor --> IntentRouter[Intent Router]
-    IntentRouter --> JiraClient[Jira API Client]
-    IntentRouter --> TaskExecutor[Task Executor]
-    JiraClient --> Jira[Jira Instance]
-    TaskExecutor --> Scripts[Automation Scripts]
+    %% UI層
+    subgraph "UI Layer"
+        Slack[Slack Workspace]
+        WebUI[Web Interface]
+        VoiceUI[Voice Interface]
+    end
+
+    %% データ収集層
+    subgraph "Data Collection Layer"
+        subgraph "Devices"
+            Android[Android Device]
+            PC[PC Activity]
+            Wearable[Galaxy Fit]
+            Camera[Posture Camera]
+            Scale[Smart Scale]
+            UPRIGHT[UPRIGHT GO 2]
+        end
+        
+        subgraph "IoT Devices"
+            Alarm[Smart Alarm]
+            AC[Air Conditioner]
+            Light[Smart Light]
+            Speaker[Smart Speaker]
+            Sensors[Environment Sensors]
+        end
+    end
+
+    %% 外部サービス層
+    subgraph "External Services"
+        Jira[Jira]
+        GitHub[GitHub]
+        GCal[Google Calendar]
+        Notion[Notion]
+        Chrome[Chrome History]
+        XGrok[X/Grok]
+    end
+
+    %% API Gateway層
+    subgraph "API Gateway Layer"
+        Gateway[API Gateway / MCP]
+        AuthManager[Auth Manager]
+        RateLimiter[Rate Limiter]
+    end
+
+    %% コア処理層
+    subgraph "Core Processing Layer"
+        EventBus[Event Bus]
+        TaskManager[Task Manager]
+        WorkflowEngine[Workflow Engine]
+        HealthManager[Health Manager]
+        IoTController[IoT Controller]
+        MonitoringService[Activity Monitor]
+    end
+
+    %% AI/ML層
+    subgraph "AI/ML Layer"
+        ChatGPT[ChatGPT/Claude]
+        VLM[Vision Language Model]
+        TaskDecomposer[Task Decomposer AI]
+        HealthAdvisor[Health Advisor AI]
+        BehaviorAnalyzer[Behavior Analyzer]
+    end
+
+    %% データ層
+    subgraph "Data Layer"
+        TimeSeries[(Time Series DB)]
+        TaskDB[(Task DB)]
+        UserProfile[(User Profile)]
+        HealthData[(Health Data)]
+        ActivityLogs[(Activity Logs)]
+    end
+
+    %% 接続関係
+    Slack --> Gateway
+    WebUI --> Gateway
+    VoiceUI --> Gateway
+    
+    Android --> Gateway
+    PC --> Gateway
+    Wearable --> Gateway
+    Camera --> Gateway
+    Scale --> Gateway
+    UPRIGHT --> Gateway
+    
+    Alarm --> IoTController
+    AC --> IoTController
+    Light --> IoTController
+    Speaker --> IoTController
+    Sensors --> IoTController
+    
+    Gateway --> AuthManager
+    Gateway --> RateLimiter
+    AuthManager --> EventBus
+    RateLimiter --> EventBus
+    
+    EventBus --> TaskManager
+    EventBus --> WorkflowEngine
+    EventBus --> HealthManager
+    EventBus --> IoTController
+    EventBus --> MonitoringService
+    
+    TaskManager --> TaskDecomposer
+    TaskManager --> ChatGPT
+    TaskManager --> TaskDB
+    TaskManager --> Jira
+    TaskManager --> GitHub
+    
+    WorkflowEngine --> GCal
+    WorkflowEngine --> TaskDB
+    WorkflowEngine --> UserProfile
+    
+    HealthManager --> VLM
+    HealthManager --> HealthAdvisor
+    HealthManager --> HealthData
+    
+    MonitoringService --> ActivityLogs
+    MonitoringService --> BehaviorAnalyzer
+    MonitoringService --> Chrome
+    
+    BehaviorAnalyzer --> XGrok
+    BehaviorAnalyzer --> Notion
+    
+    IoTController --> GCal
+    IoTController --> TimeSeries
 ```
+
+## アーキテクチャ設計の指針
+
+### 1. マイクロサービス・アーキテクチャ
+- 各機能を独立したサービスとして実装
+- サービス間はEvent Bus経由で疎結合に連携
+- 段階的な機能追加が容易
+
+### 2. データ収集の一元化
+- すべてのデバイス・サービスからのデータはAPI Gateway経由
+- 認証・レート制限を統一的に管理
+- MCP (Model Context Protocol) を活用した標準化
+
+### 3. AI/ML層の抽象化
+- 複数のAIモデルを用途別に使い分け
+- モデルの入れ替えが容易な設計
+- プロンプトやモデル設定の一元管理
+
+### 4. データストレージの最適化
+- 時系列データ専用DB（センサーデータ、活動ログ）
+- リレーショナルDB（タスク、ユーザー情報）
+- ドキュメントDB（ヘルスケアデータ、分析結果）
+
+### 5. セキュリティ・プライバシー考慮
+- 読み取り専用権限の原則
+- 個人情報の暗号化
+- プライベートサーバーへの選択的データ送信
+
+## 実装技術スタック
+
+### バックエンド
+- **言語**: Python (FastAPI) / Node.js (Express)
+- **メッセージング**: Redis Pub/Sub, Apache Kafka
+- **API Gateway**: Kong, Traefik
+- **コンテナ**: Docker, Kubernetes
+
+### データストレージ
+- **時系列DB**: InfluxDB, TimescaleDB
+- **リレーショナルDB**: PostgreSQL
+- **ドキュメントDB**: MongoDB
+- **キャッシュ**: Redis
+
+### AI/ML
+- **フレームワーク**: LangChain, LlamaIndex
+- **モデル管理**: MLflow
+- **ベクトルDB**: Pinecone, Weaviate
+
+### モニタリング・可観測性
+- **メトリクス**: Prometheus + Grafana
+- **ログ**: ELK Stack
+- **トレーシング**: OpenTelemetry
+
+### フロントエンド
+- **Web UI**: React/Next.js
+- **Slack App**: Bolt for Python/JavaScript
+- **音声**: Web Speech API, Google Assistant SDK
 
 ## 要件と優先順位
 
