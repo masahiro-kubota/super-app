@@ -21,16 +21,18 @@ graph TB
             Android[Android Device]
             PCClient[PC Client]
             SmartScale[Smart Scale]
+            ScreenRecorder[Screen Recorder<br/>PC/Mobile]
         end
-    
+  
         subgraph "Pull APIs"
             HealthAPI[Samsung Health API]
             UprightAPI[UPRIGHT API]
         end
-    
+  
         subgraph "Local Devices"
             Camera[Posture Camera]
             Sensors[Environment Sensors]
+            BehaviorCamera[Behavior Camera]
         end
     end
 
@@ -97,12 +99,14 @@ graph TB
     Android --> DataCollector
     PCClient --> DataCollector
     SmartScale --> DataCollector
+    ScreenRecorder --> DataCollector
   
     HealthAPI --> DataCollector
     UprightAPI --> DataCollector
   
     Camera --> DataCollector
     Sensors --> DataCollector
+    BehaviorCamera --> DataCollector
   
     %% CollectorからDBへの直接格納
     DataCollector --> TimeSeries
@@ -156,8 +160,18 @@ graph TB
   - 時系列データ、ヘルスデータ、行動ログへの統一的アクセス
   - AI Agentが必要なデータを自律的に判断して取得
 
-### 5. セキュリティ・プライバシー考慮
+### 5. 視覚的行動記録・振り返り
+
+- **画面録画機能**：PC/モバイルの画面を定期的にキャプチャ
+  - プライバシー配慮のためローカル処理を基本とする
+  - 必要な場面のみクラウドにアップロード
+- **行動カメラ**：定期的な環境撮影でスケジュール通りの行動を確認
+  - カレンダーと照合して計画と実績の乖離を可視化
+  - AIによる行動パターン分析
+
+### 6. セキュリティ・プライバシー考慮
 
 - AI Agentには基本的に読み取り専用権限
 - 制御が必要な場合のみ書き込み権限を付与
 - 個人情報の暗号化とアクセス制御
+- 画面録画・カメラ画像はローカル処理を優先
