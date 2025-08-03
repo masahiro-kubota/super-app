@@ -6,7 +6,7 @@
 graph TB
     %% チャットインターフェース層
     subgraph "Chat Interface Layer"
-        ChatInterface[Slack Workspace<br/>開発用Web UI]
+        ChatInterface[Slack / Web UI]
         ChatGateway[Chat Gateway]
     end
 
@@ -56,8 +56,6 @@ graph TB
     %% データ収集層
     subgraph "Data Collection Layer"
         DataCollector[Data Collector]
-        LocalCollector[Local Collector]
-        IoTCollector[IoT Collector]
     end
     
     %% 制御層
@@ -76,8 +74,6 @@ graph TB
     subgraph "Data Layer"
         TimeSeries[(Time Series DB)]
         UserProfile[(User Profile)]
-        HealthData[(Health Data)]
-        ActivityLogs[(Activity Logs)]
     end
 
     %% ユーザーとAI Agent間の双方向通信
@@ -105,19 +101,15 @@ graph TB
     HealthAPI --> DataCollector
     UprightAPI --> DataCollector
     
-    Camera --> LocalCollector
-    Sensors --> LocalCollector
+    Camera --> DataCollector
+    Sensors --> DataCollector
     
     %% CollectorからDBへの直接格納
     DataCollector --> TimeSeries
-    DataCollector --> HealthData
-    LocalCollector --> ActivityLogs
     
     %% APIからDBへのアクセス
     DataAPI --> TimeSeries
     DataAPI --> UserProfile
-    DataAPI --> HealthData
-    DataAPI --> ActivityLogs
     
     %% IoTデバイス制御
     ControlAPI --> IoTController
@@ -127,11 +119,10 @@ graph TB
     IoTController --> Speaker
     
     %% IoTデバイスからのデータ収集
-    Alarm --> IoTCollector
-    AC --> IoTCollector
-    Light --> IoTCollector
-    Speaker --> IoTCollector
-    IoTCollector --> TimeSeries
+    Alarm --> DataCollector
+    AC --> DataCollector
+    Light --> DataCollector
+    Speaker --> DataCollector
 ```
 
 ## アーキテクチャ設計の指針
