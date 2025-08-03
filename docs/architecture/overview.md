@@ -4,36 +4,47 @@
 
 ```mermaid
 graph TB
-    %% UI層
-    subgraph "UI Layer"
-        Slack[Slack Workspace]
-        WebUI[Web Interface]
-        VoiceUI[Voice Interface]
+    %% チャットインターフェース層
+    subgraph "Chat Interface Layer"
+        ChatInterface[Slack Workspace<br/>開発用Web UI]
+        ChatGateway[Chat Gateway]
     end
 
-    %% データ収集層
-    subgraph "Data Collection Layer"
-        subgraph "Devices"
+    %% AI Agent層
+    subgraph "AI Agent Layer"
+        AIAgent[AI Agent]
+    end
+
+    %% デバイス・データソース層
+    subgraph "Device & Data Source Layer"
+        subgraph "Push Devices"
             Android[Android Device]
-            PC[PC Activity]
-            Wearable[Galaxy Fit]
-            Camera[Posture Camera]
-            Scale[Smart Scale]
-            UPRIGHT[UPRIGHT GO 2]
+            PCClient[PC Client]
+            SmartScale[Smart Scale]
         end
         
-        subgraph "IoT Devices"
-            Alarm[Smart Alarm]
-            AC[Air Conditioner]
-            Light[Smart Light]
-            Speaker[Smart Speaker]
+        subgraph "Pull APIs"
+            HealthAPI[Samsung Health API]
+            UprightAPI[UPRIGHT API]
+        end
+        
+        subgraph "Local Devices"
+            Camera[Posture Camera]
             Sensors[Environment Sensors]
         end
     end
 
+    %% IoTデバイス層（双方向）
+    subgraph "IoT Devices (Bidirectional)"
+        Alarm[Smart Alarm]
+        AC[Air Conditioner]
+        Light[Smart Light]
+        Speaker[Smart Speaker]
+    end
+
     %% 外部サービス層
     subgraph "External Services"
-        Jira[Jira]
+        JiraCloud[Jira Cloud]
         GitHub[GitHub]
         GCal[Google Calendar]
         Notion[Notion]
@@ -41,127 +52,193 @@ graph TB
         XGrok[X/Grok]
     end
 
-    %% API Gateway層
-    subgraph "API Gateway Layer"
-        Gateway[API Gateway / MCP]
-        AuthManager[Auth Manager]
-        RateLimiter[Rate Limiter]
-    end
 
-    %% コア処理層
-    subgraph "Core Processing Layer"
-        EventBus[Event Bus]
-        TaskManager[Task Manager]
-        WorkflowEngine[Workflow Engine]
-        HealthManager[Health Manager]
+    %% データ収集層
+    subgraph "Data Collection Layer"
+        DataCollector[Data Collector]
+        LocalCollector[Local Collector]
+        IoTCollector[IoT Collector]
+    end
+    
+    %% 制御層
+    subgraph "Control Layer"
         IoTController[IoT Controller]
-        MonitoringService[Activity Monitor]
+    end
+    
+    %% データアクセス層
+    subgraph "Data Access Layer"
+        DataAPI[Data Query API]
+        ControlAPI[Device Control API]
     end
 
-    %% AI/ML層
-    subgraph "AI/ML Layer"
-        ChatGPT[ChatGPT/Claude]
-        VLM[Vision Language Model]
-        TaskDecomposer[Task Decomposer AI]
-        HealthAdvisor[Health Advisor AI]
-        BehaviorAnalyzer[Behavior Analyzer]
-    end
 
     %% データ層
     subgraph "Data Layer"
         TimeSeries[(Time Series DB)]
-        TaskDB[(Task DB)]
         UserProfile[(User Profile)]
         HealthData[(Health Data)]
         ActivityLogs[(Activity Logs)]
     end
 
-    %% 接続関係
-    Slack --> Gateway
-    WebUI --> Gateway
-    VoiceUI --> Gateway
+    %% ユーザーとAI Agent間の双方向通信
+    ChatInterface --> ChatGateway
+    ChatGateway --> AIAgent
+    AIAgent --> ChatInterface
     
-    Android --> Gateway
-    PC --> Gateway
-    Wearable --> Gateway
-    Camera --> Gateway
-    Scale --> Gateway
-    UPRIGHT --> Gateway
+    %% AI AgentからAPIを通じたデータアクセス
+    AIAgent --> DataAPI
+    AIAgent --> JiraCloud
+    AIAgent --> GitHub
+    AIAgent --> GCal
+    AIAgent --> Notion
+    AIAgent --> Chrome
+    AIAgent --> XGrok
     
-    Alarm --> IoTController
-    AC --> IoTController
-    Light --> IoTController
-    Speaker --> IoTController
-    Sensors --> IoTController
+    %% AI Agentからの制御
+    AIAgent --> ControlAPI
     
-    Gateway --> AuthManager
-    Gateway --> RateLimiter
-    AuthManager --> EventBus
-    RateLimiter --> EventBus
+    %% データ収集（AIを介さない自動収集）
+    Android --> DataCollector
+    PCClient --> DataCollector
+    SmartScale --> DataCollector
     
-    EventBus --> TaskManager
-    EventBus --> WorkflowEngine
-    EventBus --> HealthManager
-    EventBus --> IoTController
-    EventBus --> MonitoringService
+    HealthAPI --> DataCollector
+    UprightAPI --> DataCollector
     
-    TaskManager --> TaskDecomposer
-    TaskManager --> ChatGPT
-    TaskManager --> TaskDB
-    TaskManager --> Jira
-    TaskManager --> GitHub
+    Camera --> LocalCollector
+    Sensors --> LocalCollector
     
-    WorkflowEngine --> GCal
-    WorkflowEngine --> TaskDB
-    WorkflowEngine --> UserProfile
+    %% CollectorからDBへの直接格納
+    DataCollector --> TimeSeries
+    DataCollector --> HealthData
+    LocalCollector --> ActivityLogs
     
-    HealthManager --> VLM
-    HealthManager --> HealthAdvisor
-    HealthManager --> HealthData
+    %% APIからDBへのアクセス
+    DataAPI --> TimeSeries
+    DataAPI --> UserProfile
+    DataAPI --> HealthData
+    DataAPI --> ActivityLogs
     
-    MonitoringService --> ActivityLogs
-    MonitoringService --> BehaviorAnalyzer
-    MonitoringService --> Chrome
+    %% IoTデバイス制御
+    ControlAPI --> IoTController
+    IoTController --> Alarm
+    IoTController --> AC
+    IoTController --> Light
+    IoTController --> Speaker
     
-    BehaviorAnalyzer --> XGrok
-    BehaviorAnalyzer --> Notion
-    
-    IoTController --> GCal
-    IoTController --> TimeSeries
+    %% IoTデバイスからのデータ収集
+    Alarm --> IoTCollector
+    AC --> IoTCollector
+    Light --> IoTCollector
+    Speaker --> IoTCollector
+    IoTCollector --> TimeSeries
 ```
 
 ## アーキテクチャ設計の指針
 
-### 1. マイクロサービス・アーキテクチャ
-- 各機能を独立したサービスとして実装
-- サービス間はEvent Bus経由で疎結合に連携
-- 段階的な機能追加が容易
+### 1. AI Agent中心設計
+- **ユーザー指示はSlack経由（本番）またはWeb UI（開発用）**でAI Agentが受信
+- AI Agent（Gemini CLI/Claude Code）が自律的に判断・実行
+- AI Agent内部でコンテキスト収集・アクション決定・実行を一元管理
+- データ収集は決められたルールで自動実行（AI介在なし）
 
-### 2. データ収集の一元化
-- すべてのデバイス・サービスからのデータはAPI Gateway経由
-- 認証・レート制限を統一的に管理
-- MCP (Model Context Protocol) を活用した標準化
+### 2. タスク管理の一元化
+- **すべてのタスクはJira Cloudで管理**（Task DBは使用しない）
+- AI AgentがJira APIを直接操作
+- タスクの作成、更新、分解はすべてJira上で実行
 
-### 3. AI/ML層の抽象化
-- 複数のAIモデルを用途別に使い分け
-- モデルの入れ替えが容易な設計
-- プロンプトやモデル設定の一元管理
+### 3. IoTデバイスの双方向制御
+- データ収集だけでなく、**AI Agentからの制御も可能**
+- カレンダー連携による自動制御
+- ユーザーの行動パターンに基づく最適化
 
-### 4. データストレージの最適化
-- 時系列データ専用DB（センサーデータ、活動ログ）
-- リレーショナルDB（タスク、ユーザー情報）
-- ドキュメントDB（ヘルスケアデータ、分析結果）
+### 4. データ収集とアクセスの分離
+- **Collector層**：デバイスからのデータを自動収集・格納（AIは介在しない）
+  - Push型：認証が必要なデバイスからの能動的送信
+  - Pull型：外部APIからの定期取得
+  - ローカル型：Gateway不要のローカルネットワーク内収集
+- **Data API層**：AI Agentがクエリを投げてデータを取得
+  - 時系列データ、ヘルスデータ、行動ログへの統一的アクセス
+  - AI Agentが必要なデータを自律的に判断して取得
 
 ### 5. セキュリティ・プライバシー考慮
-- 読み取り専用権限の原則
-- 個人情報の暗号化
-- プライベートサーバーへの選択的データ送信
+- AI Agentには基本的に読み取り専用権限
+- 制御が必要な場合のみ書き込み権限を付与
+- 個人情報の暗号化とアクセス制御
+
+## タスク分解フローの詳細
+
+### Slackからのタスク登録・分解フロー
+
+```mermaid
+sequenceDiagram
+    participant User as ユーザー
+    participant Slack as Slack
+    participant Gateway as API Gateway
+    participant Agent as AI Agent
+    participant DataAPI as Data API
+    participant Jira as Jira Cloud
+
+    User->>Slack: タスク依頼メッセージ
+    Slack->>Gateway: イベント通知
+    Gateway->>Agent: メッセージ転送
+    
+    %% コンテキスト収集フェーズ
+    Agent->>DataAPI: 関連情報クエリ
+    Agent->>Jira: 既存タスク確認
+    DataAPI-->>Agent: ユーザー設定・履歴
+    Jira-->>Agent: 既存タスク情報
+    
+    %% 文章整理・確認フェーズ
+    Note over Agent: タスク内容を内部で整理
+    Agent->>Slack: 確認メッセージ送信
+    Slack->>User: 「以下の内容でよろしいですか？」
+    User->>Slack: 確認/修正
+    
+    %% Jira登録フェーズ
+    alt ユーザーが承認
+        Agent->>Jira: タスク（Epic/Story）作成
+        Jira-->>Agent: タスクID・URL
+    else ユーザーが修正
+        Note over Agent: 修正内容で再整理
+        Note over Agent: 確認プロセスを繰り返し
+    end
+    
+    %% タスク分解フェーズ
+    Note over Agent: タスク分解ロジック実行
+    Agent->>Slack: 分解案の提示
+    Slack->>User: 「以下のサブタスクでよろしいですか？」
+    
+    alt ユーザーが承認
+        Agent->>Jira: サブタスク一括作成
+        Agent->>Slack: 完了通知とJiraリンク
+    else ユーザーが修正
+        User->>Slack: 修正指示
+        Note over Agent: 再分解実行
+    end
+```
+
+### フローの特徴
+
+1. **対話的確認プロセス**
+   - AIが整理した内容を必ずユーザーに確認
+   - 修正が必要な場合は繰り返し対話
+
+2. **段階的処理**
+   - まずメインタスクをJiraに登録
+   - その後、サブタスクに分解
+   - 各段階でユーザー確認を実施
+
+3. **柔軟な修正対応**
+   - どの段階でもユーザーが介入可能
+   - AIへのフィードバックループ
 
 ## 実装技術スタック
 
 ### バックエンド
 - **言語**: Python (FastAPI) / Node.js (Express)
-- **メッセージング**: Redis Pub/Sub, Apache Kafka
+- **Data API**: GraphQL / REST API（柔軟なクエリに対応）
+- **Collector**: 軽量なデータ収集デーモン
 - **API Gateway**: Kong, Traefik
 - **コンテナ**: Docker, Kubernetes
 
@@ -172,9 +249,9 @@ graph TB
 - **キャッシュ**: Redis
 
 ### AI/ML
-- **フレームワーク**: LangChain, LlamaIndex
-- **モデル管理**: MLflow
-- **ベクトルDB**: Pinecone, Weaviate
+- **AI Agent**: Gemini CLI, Claude Code
+- **外部AI API**: OpenAI API, Anthropic API, Google AI API（必要に応じて直接呼び出し）
+- **画像処理**: Vision API（食事認識など）
 
 ### モニタリング・可観測性
 - **メトリクス**: Prometheus + Grafana
